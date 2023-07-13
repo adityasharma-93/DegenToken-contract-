@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract DegenToken {
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+    uint256 public totalSupply;
+    address public owner;
+
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the contract owner can perform this action");
+        _;
+    }
+
+    constructor() {
+        name = "Degen Token"; // The name of the token
+        symbol = "DEGEN"; // The symbol of the token
+        decimals = 18; // The number of decimal places for token representation
+        totalSupply = 0; // The initial total supply of the token
+        owner = msg.sender; // The address of the contract deployer is set as the owner
+    }
+
+    // Mint new tokens and distribute them to players as rewards
+    function mint(address to, uint256 amount) public onlyOwner {
+        require(to != address(0), "Invalid recipient address");
+        totalSupply += amount; 
+        balanceOf[to] += amount; 
+        emit Transfer(address(0), to, amount);
+    }
+
+    // Transfer tokens from the sender's address to the recipient's address
+    function transfer(address to, uint256 amount) public returns (bool) {
+        require(to != address(0), "Invalid recipient address");
+        require(amount > 0, "Amount must be greater than zero");
+        require(amount <= balanceOf[msg.sender], "Insufficient balance");
+
+        balanceOf[msg.sender] -= amount; 
+        balanceOf[to] += amount; 
+        emit Transfer(msg.sender, to, amount);
+        return true;
+    }
+
+    // Approve a spender to spend tokens on behalf of the sender
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "Invalid spender address");
+
+        allowance[msg.sender][spender] = amount; 
+        emit Approval(msg.sender, spender, amount); 
+        return true;
+    }
+
+    // Transfer tokens from one address to another on behalf of the sender
+    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+        require(from != address(0), "Invalid sender address");
+        require(to != address(0), "Invalid recipient address");
+        require(amount > 0, "Amount must be greater than zero");
+        require(amount <= balanceOf[from], "Insufficient balance");
+        require(amount <= allowance[from][msg.sender], "Insufficient allowance");
+
+        balanceOf[from] -= amount; 
+        balanceOf[to] += amount; 
+        allowance[from][msg.sender] -= amount; 
+        emit Transfer(from, to, amount);
+        return true;
+    }
+
+    // Burn tokens, removing them from circulation
+    function burn(uint256 amount) public returns (bool) {
+        require(amount > 0, "Amount must be greater than zero");
+        require(amount <= balanceOf[msg.sender], "Insufficient balance");
+
+        totalSupply -= amount; 
+        balanceOf[msg.sender] -= amount;
+        emit Transfer(msg.sender, address(0), amount); 
+        return true;
+    }
+}
